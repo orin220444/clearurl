@@ -1,24 +1,25 @@
 use std::collections::HashMap;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 type HookFn = fn(input: &url::Url) -> anyhow::Result<url::Url>;
 
-lazy_static! {
-    pub static ref POST_HOOKS: HashMap<String, HookFn> = HashMap::from([
+// lazy_static! {
+    pub static POST_HOOKS: Lazy<HashMap<String, HookFn>> = Lazy::new(|| HashMap::from([
             ("bv_to_av".to_string(), bv_to_av as HookFn),
             ("fixup_twitter".to_string(), fixup_twitter as HookFn)
-        ]);
+        ])
+    );
 
     // Internal
-    static ref TRANSLATE: HashMap<char, u64> = {
+    static TRANSLATE: Lazy<HashMap<char, u64>> = Lazy::new( || {
         TABLE
             .chars()
             .enumerate()
             .map(|(i, c)| (c, i as u64))
             .collect()
-    };
-}
+    });
+// }
 
 const TABLE: &str = "fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF";
 const SELECT: [usize; 6] = [11, 10, 3, 8, 4, 6];
