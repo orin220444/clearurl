@@ -53,9 +53,9 @@ impl UrlCleaner {
     /// # Error
     ///
     /// Return error when IO fail or meeting unexpected format.
-    pub fn from_file(path: &str) -> Result<UrlCleaner, reqwest::Error> {
+    pub async fn from_file(path: &str) -> Result<UrlCleaner, reqwest::Error> {
         Ok(UrlCleaner {
-            rules: rules::parse_from_file(path),
+            rules: rules::parse_from_file(path).await,
             // default with HTTP/s proxy and 10 max redirect hop policy
             http_client: reqwest::Client::new(),
         })
@@ -158,7 +158,7 @@ impl UrlCleaner {
 
 #[tokio::test]
 async fn test_filter() {
-    let cleaner = UrlCleaner::from_file("./rules.toml").unwrap();
+    let cleaner = UrlCleaner::from_file("./rules.toml").await.unwrap();
 
     // * test normal rule
     let url = cleaner.clear(

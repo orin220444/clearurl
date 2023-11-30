@@ -27,8 +27,8 @@ pub struct Rule {
 /// Rules is a KV map with K as full-formed URL, V as clean rules.
 pub type Rules = HashMap<String, Arc<Rule>>;
 
-pub fn parse_from_file<P: AsRef<Path> + Debug>(path: P) -> Rules {
-    let content = std::fs::read_to_string(path.as_ref())
+pub async fn parse_from_file<P: AsRef<Path> + Debug>(path: P) -> Rules {
+    let content = tokio::fs::read_to_string(path.as_ref()).await
         .unwrap_or_else(|error| panic!("fail to read from {path:?}: {error}"));
     parse(&content)
 }
