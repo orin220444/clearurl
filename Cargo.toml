@@ -12,12 +12,15 @@ license = "MIT"
 members = ["clearurl_bot"]
 exclude = ["rules"]
 
+[features]
+default = ["reqwest/native-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5.8"
 url = "2.2"
 anyhow = "1.0"
-reqwest = "0.11.9"
+reqwest = { version = "0.11.9", default-features = false}
 tokio = { version = "1.16.1", features = ["rt", "macros"]}
 regex = "1.5.4"
 tracing = "0.1"
