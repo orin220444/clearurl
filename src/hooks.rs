@@ -6,6 +6,7 @@ type HookFn = fn(input: &url::Url) -> anyhow::Result<url::Url>;
 
 // lazy_static! {
     pub static POST_HOOKS: Lazy<HashMap<String, HookFn>> = Lazy::new(|| HashMap::from([
+            #[cfg(feature = "bilibili_hooks")]
             ("bv_to_av".to_string(), bv_to_av as HookFn),
             ("fixup_twitter".to_string(), fixup_twitter as HookFn)
         ])
@@ -22,10 +23,14 @@ type HookFn = fn(input: &url::Url) -> anyhow::Result<url::Url>;
 // }
 
 const TABLE: &str = "fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF";
+#[cfg(feature = "bilibili_hooks")]
 const SELECT: [usize; 6] = [11, 10, 3, 8, 4, 6];
+#[cfg(feature = "bilibili_hooks")]
 const XOR: u64 = 177451812;
+#[cfg(feature = "bilibili_hooks")]
 const ADD: u64 = 8728348608;
 
+#[cfg(feature = "bilibili_hooks")]
 fn bv_to_av(input: &url::Url) -> anyhow::Result<url::Url> {
     if input.domain().is_none() {
         anyhow::bail!("domain is empty");
@@ -65,6 +70,7 @@ fn bv_to_av(input: &url::Url) -> anyhow::Result<url::Url> {
     Ok(new_url)
 }
 
+#[cfg(feature = "bilibili_hooks")]
 #[test]
 fn test_bv_to_av() {
     let a = url::Url::parse("https://www.bilibili.com/video/BV1nY411r7o1/?p=1").unwrap();

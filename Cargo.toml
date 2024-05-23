@@ -1,6 +1,6 @@
 [package]
 name = "clearurl"
-version = "0.6.4"
+version = "0.7.1"
 edition = "2021"
 description = "A rust implementation for ClearURL"
 documentation = "https://docs.rs/clearurl/"
@@ -23,3 +23,4 @@ anyhow = { version = "1.0.75", optional = true }
 default = ["hooks", "reqwest/native-tls" ]
 hooks = ["dep:once_cell", "dep:anyhow"]
 rustls-tls = ["reqwest/rustls-tls"]
+bilibili_hooks = ["hooks"]

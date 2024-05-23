@@ -68,6 +68,50 @@ impl UrlCleaner {
         })
     }
 
+    fn clean(rule: &rules::Rule, url: &Url) -> Result<Url, UrlCleanError> {
+        if rule.rules.is_empty() {
+            return Err(UrlCleanError::NoMatchRule);
+        }
+
+        let Some(query) = url.query() else {
+            return Err(UrlCleanError::NoQuery);
+        };
+
+        if query.is_empty() {
+            return Err(UrlCleanError::NoQuery);
+        }
+
+        let mut new_url = url.clone();
+        new_url.set_query(None);
+        url.query_pairs()
+            .filter(|(k, _)| {
+                let mut is_clean = true;
+                for re in &rule.rules {
+                    if re.is_match(k) {
+                        is_clean = false;
+                        break;
+                    }
+                }
+                is_clean
+            })
+            .for_each(|(k, v)| {
+                if v.is_empty() {
+                    new_url.query_pairs_mut().append_key_only(&k);
+                    return;
+                }
+
+                new_url.query_pairs_mut().append_pair(&k, &v);
+            });
+
+        if let Some(query) = new_url.query() {
+            if query == url.query().unwrap() {
+                return Err(UrlCleanError::NothingToClear);
+            }
+        }
+
+        Ok(new_url)
+    }
+
     /// Clear the query of the given URL by pre-define rules.
     ///
     /// # Error
@@ -99,54 +143,19 @@ impl UrlCleaner {
             rule = get_rule(domain);
         }
 
-        if rule.rules.is_empty() {
-            return Err(UrlCleanError::NoMatchRule);
-        }
+        let new_url = match Self::clean(&rule, &url) {
+            Ok(new_url) => new_url,
+            Err(UrlCleanError::NoQuery) if !rule.post_hooks.is_empty() => url,
 
-        let Some(query) = url.query() else {
-            return Err(UrlCleanError::NoQuery);
+            otherwise => return otherwise,
         };
-
-        if query.is_empty() {
-            return Err(UrlCleanError::NoQuery);
-        }
-
-        let mut new_url = url.clone();
-        new_url.set_query(None);
-        url.query_pairs()
-            .filter(|(k, _)| {
-                let mut is_clean = true;
-                for re in &rule.rules {
-                    if re.is_match(k) {
-                        is_clean = false;
-                        break;
-                    }
-                }
-                is_clean
-            })
-            .for_each(|(k, v)| {
-                new_url.query_pairs_mut().append_pair(&k, &v);
-            });
-
-        if let Some(query) = new_url.query() {
-            if query == url.query().unwrap() {
-                return Err(UrlCleanError::NothingToClear);
-            }
-        }
 
         #[cfg(feature = "hooks")]
         let new_url = rule
             .post_hooks
             .iter()
-            .try_fold(new_url.clone(), |prev_url, hook_name| {
-                let hook = hooks::POST_HOOKS.get(hook_name);
-                if hook.is_none() {
-                    return Err(UrlCleanError::HookExecutionError(
-                        hook_name.to_string(),
-                        "hook not found".to_string(),
-                    ));
-                }
-                let hook_fn = hook.unwrap();
+            .flat_map(|hook_name| Some((hook_name, hooks::POST_HOOKS.get(hook_name)?)))
+            .try_fold(new_url.clone(), |prev_url, (hook_name, hook_fn)| {
                 hook_fn(&prev_url).map_err(|err| {
                     UrlCleanError::HookExecutionError(hook_name.to_string(), err.to_string())
                 })
@@ -168,18 +177,12 @@ async fn test_filter() {
     .unwrap();
     assert_eq!(
         url.as_str(),
-        "https://www.bilibili.com/video/av340607/?p=1&t=42"
+        "https://www.bilibili.com/video/BV18x411F7MS/?p=1&t=42"
     );
 
     // * test redirection
     #[cfg(feature = "hooks")]
     {
-        let url = cleaner.clear("https://b23.tv/Cj2HC2K").await.unwrap();
-        assert_eq!(
-            url.as_str(),
-            "https://www.bilibili.com/video/av746592874/?p=1"
-        );
-
         let url = cleaner
             .clear("https://twitter.com/Naniii_0_o/status/1713328832932147227?t=1&s=1")
             .await
@@ -196,6 +199,21 @@ async fn test_filter() {
         assert_eq!(
             url.as_str(),
             "https://fixupx.com/MyHongKongDoll/status/1720308905513787846"
+        );
+    }
+
+    #[cfg(feature = "bilibili_hooks")]
+    {
+        let url = cleaner.clear("https://b23.tv/uPcjzlS").await.unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://www.bilibili.com/video/av746592874/?p=1"
+        );
+
+        let url = cleaner.clear("https://b23.tv/Cj2HC2K").await.unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://www.bilibili.com/video/av746592874/?p=1"
         );
     }
 
@@ -243,4 +261,13 @@ async fn test_filter() {
             panic!("URL doesn't return error NothingToClear")
         }
     }
+
+    // * test key only
+    let url = cleaner.clear("https://t.me/example/321?single").await;
+    match url {
+        Err(UrlCleanError::NothingToClear) => {}
+        _ => {
+            panic!("URL doesn't return error NothingToClear")
+        }
+    };
 }
