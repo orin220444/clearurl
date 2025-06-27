@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 type HookFn = fn(input: &url::Url) -> anyhow::Result<url::Url>;
 
 // lazy_static! {
-    pub static POST_HOOKS: Lazy<HashMap<String, HookFn>> = Lazy::new(|| HashMap::from([
+    pub static POST_HOOKS: LazyLock<HashMap<String, HookFn>> = LazyLock::new(|| HashMap::from([
             #[cfg(feature = "bilibili_hooks")]
             ("bv_to_av".to_string(), bv_to_av as HookFn),
             ("fixup_twitter".to_string(), fixup_twitter as HookFn)
@@ -13,7 +13,7 @@ type HookFn = fn(input: &url::Url) -> anyhow::Result<url::Url>;
     );
 
     // Internal
-    static TRANSLATE: Lazy<HashMap<char, u64>> = Lazy::new( || {
+    static TRANSLATE: LazyLock<HashMap<char, u64>> = LazyLock::new( || {
         TABLE
             .chars()
             .enumerate()
