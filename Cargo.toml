@@ -1,6 +1,6 @@
 [package]
 name = "clearurl"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2021"
 description = "A rust implementation for ClearURL"
 documentation = "https://docs.rs/clearurl/"
@@ -10,16 +10,16 @@ license = "MIT"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-toml = "0.8.6"
-url = "2.4.1"
-reqwest = {version = "0.12", default-features = false}
-tokio = { version = "1.16.1", features = ["rt", "macros", "fs"]}
-regex = "1.5.4"
-thiserror = "2"
-anyhow = { version = "1.0.75", optional = true }
+toml = "0.8.19"
+url = "2.5.4"
+reqwest = { version = "0.12.9", default-features = false }
+tokio = { version = "1.42.0", features = ["rt", "macros", "fs"] }
+regex = "1.11.1"
+thiserror = "2.0.7"
+anyhow = { version = "1.0.94", optional = true }
 
 [features]
-default = ["hooks", "reqwest/native-tls" ]
+default = ["hooks", "reqwest/native-tls"]
 hooks = ["dep:anyhow"]
 rustls-tls = ["reqwest/rustls-tls"]
 bilibili_hooks = ["hooks"]
